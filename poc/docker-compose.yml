@@ -1,0 +1,31 @@
+services:
+  mock_site:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./mock_site/html/${SITE_VERSION:-v1}:/usr/share/nginx/html:ro
+
+  scraper:
+    build: ./scraper
+    restart: unless-stopped
+    depends_on:
+      - mock_site
+    environment:
+      - SCRAPER_URL=http://mock_site
+      - SCRAPE_INTERVAL=10
+    volumes:
+      - ./workspace:/workspace
+
+  agent:
+    build: ./agent
+    restart: unless-stopped
+    depends_on:
+      - mock_site
+    environment:
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - SCRAPER_URL=http://mock_site
+      - AGENT_MODEL=${AGENT_MODEL:-claude-sonnet-4-6}
+    volumes:
+      - ./workspace:/workspace
