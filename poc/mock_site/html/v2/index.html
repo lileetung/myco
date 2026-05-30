@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Acme Widget Pro</title>
+  <meta property="og:title" content="Acme Widget Pro">
+  <meta property="og:type" content="product">
+  <meta property="product:price:amount" content="49.99">
+  <meta property="product:price:currency" content="USD">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": "Acme Widget Pro",
+      "sku": "WGT-001",
+      "description": "A great widget for all your widgeting needs.",
+      "offers": {
+        "@type": "Offer",
+        "price": "49.99",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    }
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 1100px; margin: 0 auto; padding: 2em; background: #fafafa; color: #1a1a1a; }
+    .pdp { display: grid; grid-template-columns: 1fr 1fr; gap: 3em; background: white; border-radius: 12px; padding: 2em; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .pdp__gallery { background: linear-gradient(135deg, #f0f0f0, #e0e0e0); border-radius: 8px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 10em; color: #b8b8b8; }
+    .pdp__name { font-size: 2em; font-weight: 700; margin: 0 0 0.3em; letter-spacing: -0.02em; }
+    .pdp__rating { color: #f80; margin-bottom: 1em; font-size: 0.9em; }
+    .pdp__pricing { display: flex; align-items: baseline; gap: 0.4em; margin: 1.2em 0; }
+    .pdp__pricing__amount { font-size: 1.8em; font-weight: 600; }
+    .pdp__pricing__currency { color: #888; font-size: 0.9em; }
+    .pdp__overview { color: #555; line-height: 1.6; margin: 1.5em 0; }
+    .pdp__attributes { border-top: 1px solid #eee; padding-top: 1em; margin-top: 1.5em; }
+    .pdp__attributes dt { color: #888; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.05em; }
+    .pdp__attributes dd { margin: 0 0 0.8em; font-weight: 500; }
+    .pdp__cta { background: #000; color: white; border: 0; padding: 1em 2em; border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <article class="pdp">
+    <div class="pdp__gallery">⚙️</div>
+    <div class="pdp__details">
+      <h1 class="pdp__name">Acme Widget Pro</h1>
+      <div class="pdp__rating">★★★★☆ (127 reviews)</div>
+      <div class="pdp__pricing">
+        <span class="pdp__pricing__amount">49.99</span>
+        <span class="pdp__pricing__currency">USD</span>
+      </div>
+      <p class="pdp__overview">A great widget for all your widgeting needs.</p>
+      <dl class="pdp__attributes">
+        <dt>SKU</dt>
+        <dd>WGT-001</dd>
+      </dl>
+      <button class="pdp__cta">Add to Cart</button>
+    </div>
+  </article>
+</body>
+</html>

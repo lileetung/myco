@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shop</title>
+  <style>
+    body { font-family: "Inter", -apple-system, sans-serif; margin: 0; background: #0a0a0a; color: #eee; min-height: 100vh; padding: 4em 2em; }
+    product-card { display: grid; grid-template-columns: 1fr 1fr; max-width: 1100px; margin: 0 auto; gap: 4em; padding: 3em; background: #1a1a1a; border-radius: 20px; border: 1px solid #2a2a2a; }
+    product-card [data-slot="image"] { background: linear-gradient(135deg, #2a2a2a, #1a1a1a); aspect-ratio: 1; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 12em; filter: grayscale(1) brightness(0.8); }
+    product-card [data-slot="content"] header { font-size: 2.6em; font-weight: 800; letter-spacing: -0.03em; margin: 0.4em 0 0.2em; line-height: 1; }
+    product-card [data-slot="content"] .badge { display: inline-block; color: #999; font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.2em; padding: 0.3em 0.8em; border: 1px solid #333; border-radius: 999px; }
+    product-card [data-slot="content"] p { color: #aaa; line-height: 1.7; margin: 1.5em 0; font-size: 1.05em; }
+    product-card [data-slot="content"]::after {
+      content: "$" attr(data-price-amount) " " attr(data-price-currency);
+      display: block;
+      font-size: 2.2em;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 1em 0;
+      color: white;
+    }
+    product-card [data-slot="cta"] button { background: white; color: black; padding: 1em 2em; border: 0; border-radius: 999px; font-weight: 600; cursor: pointer; font-size: 1em; }
+  </style>
+</head>
+<body>
+  <product-card
+    data-product-id="WGT-001"
+    data-product-name="Acme Widget Pro"
+    data-price-amount="49.99"
+    data-price-currency="USD"
+    data-availability="in-stock"
+  >
+    <div data-slot="image">⚙️</div>
+    <div data-slot="content" data-price-amount="49.99" data-price-currency="USD">
+      <span class="badge">Premium</span>
+      <header>Acme Widget Pro</header>
+      <p>A great widget for all your widgeting needs.</p>
+    </div>
+    <div data-slot="cta"><button>Buy now →</button></div>
+  </product-card>
+</body>
+</html>
