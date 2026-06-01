@@ -7,7 +7,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 URL = sys.argv[1] if len(sys.argv) > 1 else "http://mock_site"
-FAILURE_PATH = Path("/workspace/failure.json")
+FAILURE_PATH = Path(__file__).resolve().parent / "failure.json"
 
 
 def main():
