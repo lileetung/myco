@@ -17,15 +17,3 @@ services:
       - SCRAPE_INTERVAL=10
     volumes:
       - ./workspace:/workspace
-
-  agent:
-    build: ./agent
-    restart: unless-stopped
-    depends_on:
-      - mock_site
-    environment:
-      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
-      - SCRAPER_URL=http://mock_site
-      - AGENT_MODEL=${AGENT_MODEL:-claude-sonnet-4-6}
-    volumes:
-      - ./workspace:/workspace

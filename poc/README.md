@@ -1,85 +1,46 @@
 # Self-Healing Scraper PoC
 
-Three containers exercising the agent-patches-scraper loop end-to-end:
+## Prerequisites
 
-- **`mock_site`** — nginx serving a static product page. Three HTML versions in `mock_site/html/v1|v2|v3` are bind-mounted one at a time via `SITE_VERSION`.
-- **`scraper`** — Python service that runs `workspace/scraper.py` against the mock site every 10s. On failure, writes `workspace/failure.json`.
-- **`agent`** — long-running watcher. When it sees `failure.json`, sends the scraper source + error + raw HTML to Claude, applies the returned patched source, runs the scraper itself to verify, and commits to a local git repo in `workspace/` on success.
+- Docker + `docker compose`
+- Local `claude` CLI logged in (`claude --version` works)
+- Python 3 (stdlib only)
 
-`workspace/` is bind-mounted into both `scraper` and `agent`, so the agent's edits are immediately visible to the scraper's next run.
+## Commands
 
-## Setup
+| Command | What it does |
+| --- | --- |
+| `make up` | Build & start `mock_site` + `scraper` containers AND launch `auto_healer.py` in the background (self-healing on by default). |
+| `make logs` | Tail the scraper container output (`[runner] OK` / `[runner] FAIL`). |
+| `make agent-logs` | Tail the host agent log (`failure detected` / `spawning claude` / `claude exited`). |
+| `make v1` | Flip `mock_site` to v1 HTML (baseline — matches the seed scraper). |
+| `make v2` | Flip to v2 HTML (BEM rename + JSON-LD) — breaks the seed scraper. |
+| `make v3` | Flip to v3 HTML (web component + `data-*`) — breaks again. |
+| `make reset` | Stop the stack + host agent, restore `seed/scraper.py`, clear logs. Run `make up` again to start fresh. |
 
-```
-cp .env.example .env
-# Edit .env: set CLAUDE_API_KEY
-make up
-make logs
-```
+The agent watches `workspace/failure.json`. When a failure appears, it spawns `claude -p ... --model='claude-opus-4-7[1M]' --dangerously-skip-permissions` in `workspace/` to patch the scraper.
 
-Initial state is `SITE_VERSION=v1`. You should see, every 10s:
-
-```
-scraper-1  | [runner] OK  {"title": "Acme Widget Pro", "price": "$49.99", ...}
-agent-1    | [HH:MM:SS] agent up, watching /workspace/failure.json
-```
-
-## Trigger a patch
-
-Flip the mock site to a version with different markup:
+## Play it
 
 ```
-make v2     # rename CSS classes (.price → .product-price, etc.)
+make up           # stack + agent, all in one
+make v2           # break the scraper; agent auto-heals within ~30–60s
+make v3           # try the harder one
 ```
 
-What you'll see:
+Optional, in other terminals: `make logs` and `make agent-logs` to watch what's happening.
 
-1. Within ~10s the scraper logs `[runner] FAIL`.
-2. `workspace/failure.json` appears.
-3. The agent logs `failure detected`, `calling Claude`, `patched scraper.py`, `verification PASSED`.
-4. The scraper's next iteration logs `[runner] OK` again.
+Open <http://localhost:8080> in a browser to see the current `mock_site` HTML — it changes every time you run `make v1` / `make v2` / `make v3`.
 
-Then try the harder one:
+## Inspect
 
 ```
-make v3     # restructure DOM to <article data-*>
+cat workspace/agent.log                       # agent events
+diff seed/scraper.py workspace/scraper.py     # claude's patch
 ```
 
-## Inspect what the agent did
+## ⚠️ Security note — PoC only
 
-```
-cd workspace
-git log --oneline
-git diff HEAD~1 HEAD -- scraper.py
-cat agent.log
-```
+This PoC feeds the failed page's raw HTML into a `claude --dangerously-skip-permissions` invocation that can run `Bash` freely on the host. `mock_site` here serves static HTML we control, so it's safe.
 
-## Reset
-
-```
-make reset       # revert scraper.py and clear failure log
-make v1     # back to the original site
-```
-
-## How the test versions differ
-
-| Version | Style | What changes for the scraper |
-| --- | --- | --- |
-| **v1** | 2015-era e-commerce — semantic classes, Bootstrap-ish layout | baseline: `h1.product-title`, `.price` (with `$` prefix), `.sku` (with `SKU: ` prefix), `.description` |
-| **v2** | Modern BEM redesign with structured data | classes fully renamed (`pdp__name`, `pdp__pricing__amount`, etc.); price split into amount + currency nodes (no `$`); SKU lives inside `<dl><dt>SKU</dt><dd>WGT-001</dd></dl>`; full JSON-LD + Open Graph available as a clean alternate data source |
-| **v3** | Headless / SPA shell with web components | uses a `<product-card>` custom element; price and SKU are in `data-*` attributes, NOT in visible DOM text (the rendered `$49.99` is injected by CSS `::before`); product name appears both in `data-product-name` and in a `<header>` inside `[data-slot="content"]`; description is the only field still in a plain `<p>` |
-
-Open `http://localhost:8080` in a browser after each flip — you'll see they actually look like three different sites.
-
-## What this PoC is and isn't
-
-This is the minimum end-to-end loop. It deliberately skips:
-
-- Blue-green deployment of the scraper (here, the next loop iteration just picks up the new code).
-- Postgres / Redis for queue + items (no queue at all — single URL, in-memory).
-- nginx routing and the welly-geo-style `deploy.sh` flip.
-- GitHub PRs and CI gating (commits go to a local-only git in `workspace/.git`).
-- Failure fingerprint dedup across multiple sites (one scraper, one site).
-- Golden-fixture replay verification (verification = "the patched scraper exits 0").
-
-See `../PLAN.md` for the full production design these are placeholders for.
+**Do NOT point this at real third-party sites without sandboxing claude** (containerized, network-restricted, read-only host FS, no host credentials). A malicious page could embed prompt-injection payloads that the LLM would execute as host shell commands — turning an HTML response into RCE on the machine running `auto_healer.py`.

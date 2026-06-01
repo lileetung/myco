@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
-# Restore the PoC to a clean state so you can re-run the agent recovery demo.
+# Tear the PoC down and restore a clean slate.
 #
-#   - stops the full stack
+#   - stops the host auto-healer (if running) and the docker stack
 #   - reverts workspace/scraper.py to the seed (v1-only selectors + non-null validation)
-#   - clears workspace/failure.json, workspace/agent.log, workspace/.git
-#   - brings the full stack back up at SITE_VERSION=v1
+#   - clears workspace/failure.json, workspace/agent.log
 #
-# Doing the down/up cycle here (rather than leaving it to the user) guarantees
-# no stale containers, no stale networks, and no leftover SITE_VERSION env
-# from a previous shell command.
+# Run `make up` again to start fresh.
 
 set -e
 cd "$(dirname "$0")"
+
+echo "==> stopping auto-healer (if running)"
+PID=$(cat .agent.lock 2>/dev/null || true)
+if [ -n "$PID" ]; then
+    kill "$PID" 2>/dev/null || true
+fi
+rm -f .agent.lock
 
 echo "==> stopping stack"
 docker compose down >/dev/null
@@ -19,26 +23,17 @@ docker compose down >/dev/null
 echo "==> restoring workspace/scraper.py from seed/"
 cp seed/scraper.py workspace/scraper.py
 
-echo "==> clearing failure.json, agent.log, any stale workspace/.git"
+echo "==> clearing failure.json, agent.log"
 rm -f workspace/failure.json workspace/agent.log
-rm -rf workspace/.git
-
-echo "==> rebuilding & starting full stack at SITE_VERSION=v1"
-SITE_VERSION=v1 docker compose up -d --build >/dev/null
 
 cat <<EOF
 
 reset complete.
 
-  scraper.py  -> seed (only v1 selectors, with required-field validation)
+  scraper.py             -> seed (only v1 selectors)
   failure.json, agent.log -> cleared
-  mock_site   -> v1
-  stack       -> fresh
+  stack                  -> stopped
+  auto-healer            -> stopped
 
-To reproduce the recovery loop:
-
-  docker compose logs -f agent    # watch the agent in another shell
-  make v2                         # BEM redesign + JSON-LD  (easy patch)
-  make v3                         # web-component shell     (harder patch)
-
+Run \`make up\` to start fresh.
 EOF

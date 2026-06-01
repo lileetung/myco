@@ -1,3 +1,4 @@
 .env
+.agent.lock
 workspace/failure.json
 workspace/agent.log
